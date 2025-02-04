@@ -1,4 +1,4 @@
-# Demucs Node.js Web Application
+# Audio Stem Gen
 
 A web application that provides a user interface for Demucs, an open-source music source separation model. This application allows users to upload audio files and separate them into individual stems (vocals, drums, bass, and other).
 
