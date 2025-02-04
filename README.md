@@ -22,7 +22,7 @@ For more installation options or detailed instructions, visit the [official Demu
 
 1. Clone this repository:
 ```bash
-git clone [your-repo-url]
+git clone https://github.com/jonathanhudak/audio-stem-gen-webapp.git
 cd demucs-node-app
 ```
 
