@@ -1,0 +1,19 @@
+<div class="stems-container">
+    <% if (Object.values(audioUrls).length > 0) { %>
+        <h3>Separated Audio Stems</h3>
+    <% } %>
+    <% stems.forEach(function(stem) { %>
+        <div class="stem-container">
+            <h3 class="stem-title"><%= stem.charAt(0).toUpperCase() + stem.slice(1) %></h3>
+            <% if (audioUrls && audioUrls[stem]) { %>
+                <div class="audio-player">
+                    <audio controls>
+                        <source src="<%= audioUrls[stem] %>" type="audio/wav">
+                        Your browser does not support the audio element.
+                    </audio>
+                    <a href="<%= audioUrls[stem] %>" download class="download-link">Download <%= stem %> stem</a>
+                </div>
+            <% } %>
+        </div>
+    <% }); %>
+</div>

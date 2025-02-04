@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Demucs Audio Separator</title>
+    <script src="/node_modules/htmx.org/dist/htmx.min.js"></script>
+    <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        .progress-bar {
+            width: 100%;
+            background-color: #f0f0f0;
+            padding: 3px;
+            border-radius: 3px;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, .2);
+            margin: 10px 0;
+        }
+        .progress-bar-fill {
+            display: block;
+            height: 22px;
+            background-color: #659cef;
+            border-radius: 3px;
+            transition: width 500ms ease-in-out;
+            width: 0%;
+        }
+        .stem-progress {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Audio Stem Separator</h1>
+        
+        <form id="upload-form" 
+              hx-post="/upload" 
+              hx-encoding="multipart/form-data"
+              hx-target="#results"
+              hx-swap="innerHTML"
+              hx-on::after-request="handleUploadComplete(event)"
+              hx-indicator="#loading">
+            <input type="file" name="file" accept="audio/*" required>
+            <button type="submit">Process Audio</button>
+        </form>
+
+        <div id="loading" class="htmx-indicator">
+            Processing... Please wait
+        </div>
+
+        <div id="progress-container" style="display: none;">
+            <h3>Processing Progress</h3>
+            <div class="stem-progress">
+                <div>Drums: <span id="drums-progress">0</span>%</div>
+                <div class="progress-bar">
+                    <span id="drums-bar" class="progress-bar-fill" style="width: 0%"></span>
+                </div>
+            </div>
+            <div class="stem-progress">
+                <div>Bass: <span id="bass-progress">0</span>%</div>
+                <div class="progress-bar">
+                    <span id="bass-bar" class="progress-bar-fill" style="width: 0%"></span>
+                </div>
+            </div>
+            <div class="stem-progress">
+                <div>Other: <span id="other-progress">0</span>%</div>
+                <div class="progress-bar">
+                    <span id="other-bar" class="progress-bar-fill" style="width: 0%"></span>
+                </div>
+            </div>
+            <div class="stem-progress">
+                <div>Vocals: <span id="vocals-progress">0</span>%</div>
+                <div class="progress-bar">
+                    <span id="vocals-bar" class="progress-bar-fill" style="width: 0%"></span>
+                </div>
+            </div>
+        </div>
+
+        <div id="results">
+            <!-- Results will be dynamically inserted here -->
+        </div>
+    </div>
+
+    <script>
+        let currentEventSource = null;
+
+        function closeEventSource() {
+            if (currentEventSource) {
+                currentEventSource.close();
+                currentEventSource = null;
+            }
+        }
+
+        // Clean up EventSource when the page is unloaded
+        window.addEventListener('unload', closeEventSource);
+
+        function handleUploadComplete(event) {
+            const response = JSON.parse(event.detail.xhr.response);
+            
+            if (response.success) {
+                // Create audio players for each stem
+                const resultsDiv = document.getElementById('results');
+                resultsDiv.innerHTML = `
+                    <div class="stems-container">
+                        <h3>Separated Audio Stems</h3>
+                        ${response.stems.map(stem => `
+                            <div class="stem-container">
+                                <h3 class="stem-title">${stem.name.charAt(0).toUpperCase() + stem.name.slice(1)}</h3>
+                                <div class="audio-player">
+                                    <audio controls>
+                                        <source src="${stem.url}" type="audio/wav">
+                                        Your browser does not support the audio element.
+                                    </audio>
+                                    <a href="${stem.url}" download class="download-link">Download ${stem.name} stem</a>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+
+                // Close the EventSource since processing is complete
+                closeEventSource();
+            }
+        }
+
+        document.getElementById('upload-form').addEventListener('submit', function(e) {
+            // Show progress container and initialize progress bars
+            const progressContainer = document.getElementById('progress-container');
+            progressContainer.style.display = 'block';
+            
+            // Reset progress bars
+            document.querySelectorAll('.progress-bar-fill').forEach(bar => {
+                bar.style.width = '0%';
+            });
+            document.querySelectorAll('[id$="-progress"]').forEach(progress => {
+                progress.textContent = '0';
+            });
+
+            // Close existing EventSource if any
+            closeEventSource();
+
+            // Create new EventSource
+            currentEventSource = new EventSource('/progress-stream');
+            
+            currentEventSource.onmessage = function(event) {
+                const progress = JSON.parse(event.data);
+                Object.keys(progress).forEach(stem => {
+                    const progressElement = document.getElementById(`${stem}-progress`);
+                    const barElement = document.getElementById(`${stem}-bar`);
+                    if (progressElement && barElement) {
+                        const value = Math.round(progress[stem] * 100);
+                        progressElement.textContent = value;
+                        barElement.style.width = value + '%';
+                    }
+                });
+            };
+
+            currentEventSource.onerror = function() {
+                closeEventSource();
+            };
+        });
+
+        function initializeProgress() {
+            // This function is kept for backward compatibility
+            // but its functionality has been moved to the form submit handler
+        }
+    </script>
+</body>
+</html>
