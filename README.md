@@ -1,5 +1,9 @@
 # Audio Stem Gen
 
+> ⚠️ **PROTOTYPE WARNING** ⚠️
+> 
+> 🚧 This application is currently a prototype and under active development. It may have limitations, bugs, or missing features. Use with caution in production environments. 🏗️
+
 A web application that provides a user interface for Demucs, an open-source music source separation model. This application allows users to upload audio files and separate them into individual stems (vocals, drums, bass, and other).
 
 ## Prerequisites
